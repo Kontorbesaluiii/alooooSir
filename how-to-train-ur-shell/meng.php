@@ -800,12 +800,12 @@ echo '
                             <a href="?dir='.$dir.'&ubah='.$itemPath.'" class="button1">Edit</a>
                             <a href="?dir='.$dir.'&rename='.$itemPath.'&nama='.$file.'" class="button1">Rename</a>
                             <a href="?dir='.$dir.'&modify='.$itemPath.'" class="button1">Modify Date</a>
-                            <a href="?dir='.$dir.'&zip='.$itemPath.'" class="button1">Zip</a>
-                            <a href="?dir='.$dir.'&unzip='.$itemPath.'" class="button1">Unzip</a>
                         </td>
  				    </tr>
  				   ';
 				}
+                // <a href="?dir='.$dir.'&zip='.$itemPath.'" class="button1">Zip</a>
+                // <a href="?dir='.$dir.'&unzip='.$itemPath.'" class="button1">Unzip</a>
 
 
 
